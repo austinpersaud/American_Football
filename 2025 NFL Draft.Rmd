@@ -1,0 +1,395 @@
+---
+title: "Untitled"
+author: "Austin Persaud"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# Libraries
+```{r}
+library(tidyverse)
+library(kableExtra)
+library(gt)
+```
+
+
+# Load Data
+```{r}
+# data from PFF
+receiving_data <- read.csv("C:/Users/GamerTech/Documents/NFL/receiving_summary.csv")
+rushing_data <- read.csv("C:/Users/GamerTech/Documents/NFL/rushing_summary.csv")
+passing_data <- read.csv("C:/Users/GamerTech/Documents/NFL/passing_summary.csv")
+```
+
+
+# Filter Top 10 Receivers
+```{r}
+# Define the top 10 WR names
+top_10_names_receivers  <- c(
+  "Travis Hunter",
+  "Tetairoa McMillan", 
+  "Emeka Egbuka", 
+  "Matthew Golden", 
+  "Jayden Higgins", 
+  "Luther Burden III", 
+  "Tre Harris", "Jack Bech", 
+  "Kyle Williams", 
+  "Isaac TeSlaa"
+  )
+
+# Filter the data for those top 10 players
+top_10_receivers <- receiving_data |> 
+  filter(player %in% top_10_names_receivers)
+
+# Add a manual column for draft pick based on player names and the team that drafted them
+top_10_receivers <- top_10_receivers |> 
+  mutate(
+    draft_pick = case_when(
+      player == "Travis Hunter" ~ 2,
+      player == "Tetairoa McMillan" ~ 8,
+      player == "Emeka Egbuka" ~ 19,
+      player == "Matthew Golden" ~ 23,
+      player == "Jayden Higgins" ~ 34,
+      player == "Luther Burden III" ~ 39,
+      player == "Tre Harris" ~ 55,
+      player == "Jack Bech" ~ 58,
+      player == "Kyle Williams" ~ 69,
+      player == "Isaac TeSlaa" ~ 70,
+      TRUE ~ NA_real_
+    ),
+    draft_team = case_when(
+      player == "Travis Hunter" ~ "Jaguars",
+      player == "Tetairoa McMillan" ~ "Panthers",
+      player == "Emeka Egbuka" ~ "Buccaneers",
+      player == "Matthew Golden" ~ "Packers",
+      player == "Jayden Higgins" ~ "Texans",
+      player == "Luther Burden III" ~ "Bears",
+      player == "Tre Harris" ~ "Chargers",
+      player == "Jack Bech" ~ "Raiders",
+      player == "Kyle Williams" ~ "Patriots",
+      player == "Isaac TeSlaa" ~ "Lions",
+      TRUE ~ NA_character_ 
+    )
+  )|>
+  mutate(player = factor(player, levels = top_10_names_receivers))|>
+  arrange(player)
+```
+
+# Create Table WR
+```{r}
+# Create Table for top 10 WR
+top_10_receivers|>
+  select(player, team_name, draft_pick, draft_team, yprr, contested_catch_rate, yards_after_catch_per_reception)|>
+  mutate(
+    yprr = round(yprr, 2),
+    contested_catch_rate = round(contested_catch_rate, 1),
+    yards_after_catch_per_reception = round(yards_after_catch_per_reception, 1),
+    draft_team = toupper(draft_team),
+    player = toupper(player)
+  )|>
+  gt()|>
+  tab_header(
+    title = "Top 10 Wide Receivers by Draft Order in the 2025 NFL Draft",
+    subtitle = "Austin Persaud | X : @analyticsbyAP | Data: PFF"
+  )|>
+  cols_label(
+    player = "Player",
+    team_name = "College",
+    draft_pick = "Draft Pick",
+    draft_team = "Drafted By",
+    contested_catch_rate = "Contested Catch Rate",
+    yprr = "YPRR",
+    yards_after_catch_per_reception = "YAC per Reception"
+  )|>
+  gtExtras::gt_theme_espn()|>
+  tab_spanner(
+    label = "Draft Info", 
+    columns = c(draft_pick, draft_team)
+  )|>
+  tab_spanner(
+    label = "2024 College Statistics", 
+    columns = c(contested_catch_rate, yprr, yards_after_catch_per_reception)
+  )|>
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_column_labels(columns = everything())
+  )|>
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_body(columns = c(player, team_name, draft_pick, draft_team, yprr, contested_catch_rate, yards_after_catch_per_reception))
+  )|>
+  gtsave("top_10_receivers_table.png")
+```
+
+# Filter Top 10 Running Backs
+```{r}
+# Define the top 10 RB names
+top_10_names_running_backs <- c(
+  "Ashton Jeanty", 
+  "Omarion Hampton", 
+  "Quinshon Judkins", 
+  "TreVeyon Henderson", 
+  "RJ Harvey", 
+  "Kaleb Johnson", 
+  "Bhayshul Tuten", 
+  "Cam Skattebo", 
+  "Trevor Etienne", 
+  "Jo'Quavious Marks"
+)
+
+# Filter the data for those top 10 players
+top_10_running_backs <- rushing_data |> 
+  filter(player %in% top_10_names_running_backs)
+
+# Add a manual column for draft pick and the team that drafted them
+top_10_running_backs <- top_10_running_backs |> 
+  mutate(
+    draft_pick = case_when(
+      player == "Ashton Jeanty" ~ 6,
+      player == "Omarion Hampton" ~ 22,
+      player == "Quinshon Judkins" ~ 36,
+      player == "TreVeyon Henderson" ~ 38,
+      player == "RJ Harvey" ~ 60,
+      player == "Kaleb Johnson" ~ 83,
+      player == "Bhayshul Tuten" ~ 104,
+      player == "Cam Skattebo" ~ 105,
+      player == "Trevor Etienne" ~ 114,
+      player == "Jo'Quavious Marks" ~ 116,
+      TRUE ~ NA_real_
+    ),
+    draft_team = case_when(
+      player == "Ashton Jeanty" ~ "Raiders",
+      player == "Omarion Hampton" ~ "Chargers",
+      player == "Quinshon Judkins" ~ "Browns",
+      player == "TreVeyon Henderson" ~ "Patriots",
+      player == "RJ Harvey" ~ "Broncos",
+      player == "Kaleb Johnson" ~ "Steelers",
+      player == "Bhayshul Tuten" ~ "Jaguars",
+      player == "Cam Skattebo" ~ "Giants",
+      player == "Trevor Etienne" ~ "Panthers",
+      player == "Jo'Quavious Marks" ~ "Texans",
+      TRUE ~ NA_character_
+    )
+  ) |> 
+  mutate(player = factor(player, levels = top_10_names_running_backs)) |> 
+  arrange(player)
+```
+
+# Create Table RB
+```{r}
+# Create Table for Top 10 RB's
+top_10_running_backs |> 
+  select(player, team_name, draft_pick, draft_team, yco_attempt, yprr, elusive_rating) |> 
+  mutate(
+    yco_attempt = round(yco_attempt, 2),
+    yprr = round(yprr, 2),
+    elusive_rating = round(elusive_rating, 1),
+    draft_team = toupper(draft_team),
+    player = toupper(player)
+  ) |> 
+  gt() |> 
+  tab_header(
+    title = "Top 10 Running Backs by Draft Order in the 2025 NFL Draft",
+    subtitle = "Austin Persaud | X : @analyticsbyAP | Data: PFF"
+  ) |> 
+  cols_label(
+    player = "Player",
+    team_name = "College",
+    draft_pick = "Draft Pick",
+    draft_team = "Drafted By",
+    yco_attempt = "YCO per Attempt",
+    yprr = "YPRR",
+    elusive_rating = "Elusive Rating"
+  ) |> 
+  gtExtras::gt_theme_espn() |> 
+  tab_spanner(
+    label = "Draft Info", 
+    columns = c(draft_pick, draft_team)
+  ) |> 
+  tab_spanner(
+    label = "2024 College Statistics", 
+    columns = c(yco_attempt, yprr, elusive_rating)
+  ) |> 
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_column_labels(columns = everything())
+  ) |> 
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_body(columns = everything())
+  ) |> 
+  gtsave("top_10_running_backs_table.png")
+```
+# Filter Top 5 Receivers
+```{r}
+# Define the top 5 tight end names
+top_5_names_tight_ends <- c(
+  "Colston Loveland", 
+  "Tyler Warren", 
+  "Mason Taylor", 
+  "Terrance Ferguson", 
+  "Elijah Arroyo"
+)
+
+# Filter the data for those top 5 players
+top_5_tight_ends <- receiving_data |> 
+  filter(player %in% top_5_names_tight_ends)
+
+# Add a manual column for draft pick based on player names and the team that drafted them
+top_5_tight_ends <- top_5_tight_ends |> 
+  mutate(
+    draft_pick = case_when(
+      player == "Colston Loveland" ~ 10,  
+      player == "Tyler Warren" ~ 14,      
+      player == "Mason Taylor" ~ 42,     
+      player == "Terrance Ferguson" ~ 46, 
+      player == "Elijah Arroyo" ~ 50,   
+      TRUE ~ NA_real_ 
+    ),
+    draft_team = case_when(
+      player == "Colston Loveland" ~ "Bears",
+      player == "Tyler Warren" ~ "Colts",
+      player == "Mason Taylor" ~ "Jets",
+      player == "Terrance Ferguson" ~ "Rams",
+      player == "Elijah Arroyo" ~ "Seahawks",
+      TRUE ~ NA_character_ 
+    )
+  ) |> 
+  mutate(player = factor(player, levels = top_5_names_tight_ends)) |> 
+  arrange(player)
+```
+
+# Create Table TE
+```{r}
+# Create Table for Top 5 Tight Ends
+top_5_tight_ends |>
+  select(player, team_name, draft_pick, draft_team, yprr, contested_catch_rate, yards_after_catch_per_reception) |>
+  mutate(
+    yprr = round(yprr, 2),
+    contested_catch_rate = round(contested_catch_rate, 1),
+    yards_after_catch_per_reception = round(yards_after_catch_per_reception, 1),
+    draft_team = toupper(draft_team),
+    player = toupper(player)
+  ) |>
+  gt() |>
+  tab_header(
+    title = "Top 5 Tight Ends by Draft Order in the 2025 NFL Draft",
+    subtitle = "Austin Persaud | X : @analyticsbyAP | Data: PFF"
+  ) |>
+  cols_label(
+    player = "Player",
+    team_name = "College",
+    draft_pick = "Draft Pick",
+    draft_team = "Drafted By",
+    contested_catch_rate = "Contested Catch Rate",
+    yprr = "YPRR",
+    yards_after_catch_per_reception = "YAC per Reception"
+  ) |>
+  gtExtras::gt_theme_espn() |>
+  tab_spanner(
+    label = "Draft Info", 
+    columns = c(draft_pick, draft_team)
+  ) |>
+  tab_spanner(
+    label = "2024 College Statistics", 
+    columns = c(contested_catch_rate, yprr, yards_after_catch_per_reception)
+  ) |>
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_column_labels(columns = everything())
+  ) |>
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_body(columns = c(player, team_name, draft_pick, draft_team, yprr, contested_catch_rate, yards_after_catch_per_reception))
+  ) |>
+  gtsave("top_5_tight_ends_table.png")
+```
+
+# Filter Top 6 QBs
+```{r}
+# Define the Top 6 Quarterbacks based on draft order
+top_6_qbs <- c(
+  "Cam Ward",
+  "Jaxson Dart", 
+  "Tyler Shough", 
+  "Jalen Milroe", 
+  "Dillon Gabriel", 
+  "Shedeur Sanders"
+  )
+
+# Filter the data for those top 6 quarterbacks
+top_6_qbs_data <- passing_data |> 
+  filter(player %in% top_6_qbs)
+
+# Add a manual column for draft pick based on player names and the team that drafted them
+top_6_qbs_data <- top_6_qbs_data |> 
+  mutate(
+    draft_pick = case_when(
+      player == "Cam Ward" ~ 1,
+      player == "Jaxson Dart" ~ 25,
+      player == "Tyler Shough" ~ 40,
+      player == "Jalen Milroe" ~ 92,
+      player == "Dillon Gabriel" ~ 94,
+      player == "Shedeur Sanders" ~ 144,
+      TRUE ~ NA_real_ 
+    ),
+    draft_team = case_when(
+      player == "Cam Ward" ~ "Titans",
+      player == "Jaxson Dart" ~ "Giants",
+      player == "Tyler Shough" ~ "Saints",
+      player == "Jalen Milroe" ~ "Seahawks",
+      player == "Dillon Gabriel" ~ "Browns",
+      player == "Shedeur Sanders" ~ "Browns",
+      TRUE ~ NA_character_ 
+    )
+  ) |>
+  mutate(player = factor(player, levels = top_6_qbs)) |>
+  arrange(player)
+```
+
+# Create Table QB
+```{r}
+# Create Table for Top 6 Quarterbacks
+top_6_qbs_data |>
+  select(player, team_name, draft_pick, draft_team, ypa, grades_pass, avg_depth_of_target) |>
+  mutate(
+    ypa = round(ypa, 2),
+    grades_pass = round(grades_pass, 1),
+    avg_depth_of_target = round(avg_depth_of_target, 1),
+    draft_team = toupper(draft_team),
+    player = toupper(player)
+  ) |>
+  gt() |>
+  tab_header(
+    title = "Top 6 Quarterbacks by Overall Draft Order in the 2025 NFL Draft",
+    subtitle = "Austin Persaud | X : @analyticsbyAP | Data: PFF"
+  ) |>
+  cols_label(
+    player = "Player",
+    team_name = "College",
+    draft_pick = "Draft Pick",
+    draft_team = "Drafted By",
+    grades_pass = "PFF Pass Grade",
+    ypa = "YPA",
+    avg_depth_of_target = "ADOT"
+  ) |>
+  gtExtras::gt_theme_espn() |>
+  tab_spanner(
+    label = "Draft Info", 
+    columns = c(draft_pick, draft_team)
+  ) |>
+  tab_spanner(
+    label = "2024 College Statistics", 
+    columns = c(grades_pass, ypa, avg_depth_of_target)
+  ) |>
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_column_labels(columns = everything())
+  ) |>
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_body(columns = c(player, team_name, draft_pick, draft_team, grades_pass, ypa, avg_depth_of_target))
+  ) |>
+  gtsave("top_6_qbs_table.png")
+
+```
+

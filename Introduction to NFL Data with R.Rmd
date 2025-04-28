@@ -1,0 +1,88 @@
+---
+title: "Introduction to NFL Data with R"
+author: "Austin Persaud"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+install.packages("tidyverse")
+install.packages("nflfastR")
+install.packages("ggimage")
+install.packages("gt")
+install.packages("gtExtras")
+```
+
+```{r Load Packages}
+library(tidyverse)
+library(nflfastR)
+library(ggimage)
+library(gt)
+```
+
+```{r Getting Data from 2021/2022}
+
+# loading and exploring data
+pbp <- load_pbp(2021:2022)
+nrow(pbp)
+pbp |> head()
+names(pbp)
+pbp |> select(posteam, defteam, down, ydstogo, play_type)
+
+# only runs and passes
+pbp_rp <- pbp|>
+  filter(pass == 1 | rush == 1) |>
+  filter(!is.na(epa))
+
+nrow(pbp_rp)
+
+# find who the best rusher was on the Lions per EPA
+pbp_rp |>
+  filter(posteam == "DET", rush == 1, !is.na(rusher_player_name)) |>
+  group_by(rusher_player_name) |>
+  summarize(rushes = n(),
+            epa_rush = mean(epa)) |>
+  filter(rushes >= 10) |> 
+  arrange(-epa_rush)
+
+# passing efficiency vs run efficiency 
+pass_efficiency <- pbp_rp |>
+  filter(season == 2021, pass == 1) |>
+  group_by(posteam) |>
+  summarize(passes = n(),
+            pass_epa = mean(epa))
+
+# run efficiency 
+rush_efficiency <- pbp_rp |>
+  filter(season == 2021, rush == 1) |>
+  group_by(posteam) |> 
+  summarize(rushes = n(),
+            rush_epa = mean(epa))
+
+# total efficiency (left join)
+total_efficiency <- pass_efficiency |>
+  left_join(rush_efficiency, by = "posteam")
+
+view(teams_colors_logos)
+
+# join logos to table
+total_efficiency <- total_efficiency |>
+  left_join(teams_colors_logos, by = c("posteam" = "team_abbr"))
+
+# make plot
+total_efficiency |>
+  ggplot(aes(x = pass_epa, y = rush_epa)) + 
+  geom_hline(yintercept = mean(total_efficiency$rush_epa), linetype = "dashed") +
+  geom_vline(xintercept = mean(total_efficiency$pass_epa), linetype = "dashed") +
+  geom_smooth(method = "lm") +
+  geom_image(aes(image = team_logo_espn), size = 0.05, asp = 16/9) +
+  theme_bw() +
+  labs(x = "EPA Per Pass",
+       y = "EPA Per run",
+       title = "EPA per Pass vs. EPA per run - NFL 2022 Season",
+       subtitle = "Regular season and playoffs included",
+       caption = "By Austin Persaud | @analyticsbyAP")
+
+ggsave('pass-rush-epa-21.png', width = 14, height = 10, dpi = 'retina')
+```
+
